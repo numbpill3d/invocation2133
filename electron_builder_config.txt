@@ -1,0 +1,184 @@
+appId: com.promptarchive.industrial
+productName: "Prompt Archive Industrial"
+copyright: "Copyright © 2024 Prompt Archive Systems"
+electronVersion: "28.0.0"
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - "**/*"
+  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
+  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
+  - "!**/node_modules/*.d.ts"
+  - "!**/node_modules/.bin"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
+  - "!.editorconfig"
+  - "!**/._*"
+  - "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}"
+  - "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}"
+  - "!**/{appveyor.yml,.travis.yml,circle.yml}"
+  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+
+compression: maximum
+removePackageKeywords: true
+removePackageScripts: true
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+    - target: portable
+      arch:
+        - x64
+        - ia32
+    - target: zip
+      arch:
+        - x64
+        - ia32
+  icon: assets/icon.ico
+  publisherName: "Prompt Archive Systems"
+  verifyUpdateCodeSignature: false
+  artifactName: "${productName}-${version}-${arch}-setup.${ext}"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "${productName}"
+  include: "build/installer.nsh"
+  warningsAsErrors: false
+  allowElevation: true
+  runAfterFinish: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  installerHeaderIcon: assets/icon.ico
+  displayLanguageSelector: false
+
+portable:
+  artifactName: "${productName}-${version}-${arch}-portable.${ext}"
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+  icon: assets/icon.icns
+  category: public.app-category.productivity
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: "build/entitlements.mac.plist"
+  entitlementsInherit: "build/entitlements.mac.plist"
+
+dmg:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  background: "build/background.png"
+  iconSize: 100
+  iconTextSize: 12
+  window:
+    width: 660
+    height: 400
+  contents:
+    - x: 180
+      y: 170
+      type: file
+    - x: 480
+      y: 170
+      type: link
+      path: /Applications
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+    - target: rpm
+      arch:
+        - x64
+        - arm64
+    - target: tar.gz
+      arch:
+        - x64
+        - arm64
+  icon: assets/icon.png
+  category: Office
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  synopsis: "Industrial prompt management system"
+  description: "A dark, utilitarian prompt management application with advanced organizational features."
+  vendor: "Prompt Archive Systems"
+  maintainer: "Prompt Archive Systems <contact@promptarchive.sys>"
+
+appImage:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+
+deb:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  depends:
+    - gconf2
+    - gconf-service
+    - libnotify4
+    - libappindicator1
+    - libxtst6
+    - libnss3
+  priority: optional
+
+rpm:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  depends:
+    - libappindicator-gtk3
+    - libnotify
+    - libnss3
+    - libxss1
+    - libxtst6
+
+snap:
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  summary: "Industrial Prompt Manager"
+  description: "A powerful, dark-themed prompt management application designed for efficiency and organization."
+  grade: stable
+  confinement: strict
+  plugs:
+    - default
+    - home
+    - removable-media
+
+# Code signing (configure as needed)
+# forceCodeSigning: false
+
+# Publishing configuration
+publish:
+  provider: github
+  owner: your-github-username
+  repo: prompt-archive-industrial
+  private: false
+  releaseType: release
+
+# Auto-updater configuration
+updater:
+  enabled: true
+  requestHeaders:
+    Cache-Control: "no-cache"
+
+# Build resources
+extraResources:
+  - from: "assets/"
+    to: "assets/"
+    filter:
+      - "**/*"

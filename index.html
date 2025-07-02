@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
+    <title>PROMPT ARCHIVE //industrial.sys</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+New:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'MS Gothic', 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+            color: #c0c0c0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Electron-specific styles */
+        body.electron-app {
+            -webkit-app-region: no-drag;
+            user-select: none;
+        }
+        
+        body.electron-app input,
+        body.electron-app textarea,
+        body.electron-app .prompt-item {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        
+        /* Custom Titlebar */
+        .custom-titlebar {
+            height: 40px;
+            background: linear-gradient(90deg, #0a0a0a, #1a1a1a);
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            -webkit-app-region: drag;
+            position: relative;
+            z-index: 1000;
+            user-select: none;
+        }
+        
+        .titlebar-title {
+            color: #87CEEB;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(135, 206, 235, 0.3);
+        }
+        
+        .titlebar-controls {
+            display: flex;
+            gap: 1px;
+            -webkit-app-region: no-drag;
+        }
+        
+        .titlebar-button {
+            width: 46px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            color: #c0c0c0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            position: relative;
+        }
+        
+        .titlebar-button:hover {
+            background: rgba(135, 206, 235, 0.1);
+            color: #87CEEB;
+        }
+        
+        .titlebar-button.close:hover {
+            background: #e81123;
+            color: #fff;
+        }
+        
+        .titlebar-button:active {
+            background: rgba(135, 206, 235, 0.2);
+        }
+        
+        .titlebar-button.close:active {
+            background: #f1707a;
+        }
+        
+        /* Platform-specific titlebar adjustments */
+        body.platform-win32 .custom-titlebar {
+            display: flex;
+        }
+        
+        body.platform-darwin .custom-titlebar {
+            padding-left: 80px; /* Account for macOS traffic lights */
+        }
+        
+        body.platform-linux .custom-titlebar {
+            display: flex;
+        }
+        
+        /* Custom Titlebar Icons */
+        .titlebar-button .icon {
+            width: 12px;
+            height: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Custom scrollbar for textareas and inputs */
+        textarea::-webkit-scrollbar,
+        input[type="text"]::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        textarea::-webkit-scrollbar-track,
+        input[type="text"]::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+        }
+        
+        textarea::-webkit-scrollbar-thumb,
+        input[type="text"]::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #555, #333);
+            border: 1px solid #87CEEB;
+        }
+        
+        textarea::-webkit-scrollbar-thumb:hover,
+        input[type="text"]::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #777, #555);
+        }
+        
+        /* Selection styling */
+        ::selection {
+            background: rgba(135, 206, 235, 0.3);
+            color: #fff;
+        }
+        
+        ::-moz-selection {
+            background: rgba(135, 206, 235, 0.3);
+            color: #fff;
+        }
+        
+        /* Custom focus styles */
+        button:focus,
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: 2px solid #87CEEB;
+            outline-offset: 1px;
+        }
+        
+        /* Custom checkbox and radio styling */
+        input[type="checkbox"],
+        input[type="radio"] {
+            accent-color: #87CEEB;
+        }
+        
+        /* Body adjustment for custom titlebar */
+        body.custom-titlebar-active {
+            padding-top: 0;
+        }
+        
+        body.custom-titlebar-active .header {
+            border-top: none;
+        }
+        
+        /* Drag region restrictions */
+        .header,
+        .main-container,
+        .footer {
+            -webkit-app-region: no-drag;
+        }
+        
+        /* Ensure buttons and interactive elements aren't draggable */
+        button,
+        input,
+        textarea,
+        select,
+        .btn,
+        .prompt-item,
+        .tag,
+        .folder-item {
+            -webkit-app-region: no-drag;
+        }
+        
+        /* Fix any potential layout issues */
+        html, body {
+            overflow-x: hidden;
+            scrollbar-gutter: stable;
+        }
+        
+        /* Ensure proper z-index stacking */
+        .custom-titlebar {
+            z-index: 9999;
+        }
+        
+        .shortcuts-overlay {
+            z-index: 10000;
+        }
+        
+        /* Additional scrollbar consistency */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #87CEEB #1a1a1a;
+        }
+        
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(40, 40, 40, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(40, 40, 40, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: gridMove 20s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(20px, 20px); }
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
+            border-bottom: 2px solid #333;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 100;
+            -webkit-app-region: drag;
+        }
+        
+        .header * {
+            -webkit-app-region: no-drag;
+        }
+        
+        .header h1 {
+            color: #87CEEB;
+            text-shadow: 0 0 10px #87CEEB50;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #333, #555);
+            border: 1px solid #666;
+            color: #c0c0c0;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            font-size: 0.9rem;
+            border-radius: 2px;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #555, #777);
+            border-color: #888;
+            box-shadow: 0 0 15px rgba(135, 206, 235, 0.2);
+        }
+        
+        .btn.primary {
+            background: linear-gradient(135deg, #2a4a5a, #3a6a7a);
+            border-color: #4a7a8a;
+        }
+        
+        .btn.primary:hover {
+            background: linear-gradient(135deg, #3a6a7a, #4a8a9a);
+            box-shadow: 0 0 15px rgba(135, 206, 235, 0.4);
+        }
+        
+        .btn.danger {
+            background: linear-gradient(135deg, #5a2a2a, #7a3a3a);
+            border-color: #8a4a4a;
+        }
+        
+        .btn.danger:hover {
+            background: linear-gradient(135deg, #7a3a3a, #9a4a4a);
+            box-shadow: 0 0 15px rgba(255, 100, 100, 0.4);
+        }
+        
+        .btn.small {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+        
+        .toggle-sidebar {
+            display: none;
+        }
+        
+        /* Main Container */
+        .main-container {
+            display: flex;
+            min-height: calc(100vh - 180px); /* Account for custom titlebar */
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 350px;
+            min-width: 350px;
+            background: linear-gradient(180deg, #1a1a1a, #0f0f0f);
+            border-right: 2px solid #333;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px); /* Account for titlebar and footer */
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+        
+        .sidebar h3 {
+            color: #87CEEB;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+        
+        .folder-tree {
+            margin-bottom: 25px;
+        }
+        
+        .folder-item {
+            padding: 10px 12px;
+            margin: 3px 0;
+            background: rgba(255,255,255,0.05);
+            border-left: 3px solid #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        
+        .folder-item:hover {
+            background: rgba(135, 206, 235, 0.1);
+            border-left-color: #87CEEB;
+        }
+        
+        .folder-item.active {
+            background: rgba(135, 206, 235, 0.2);
+            border-left-color: #87CEEB;
+        }
+        
+        .folder-icon {
+            margin-right: 8px;
+        }
+        
+        .folder-count {
+            background: rgba(135, 206, 235, 0.3);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-size: 0.7rem;
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .recent-prompts {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .recent-item {
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            margin: 2px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            border-left: 2px solid transparent;
+        }
+        
+        .recent-item:hover {
+            background: rgba(135, 206, 235, 0.1);
+            border-left-color: #87CEEB;
+        }
+        
+        .tag-cloud {
+            margin-bottom: 25px;
+        }
+        
+        .tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 8px;
+            margin: 2px;
+            border: 1px solid #444;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            position: relative;
+        }
+        
+        .tag:hover {
+            background: rgba(135, 206, 235, 0.2);
+            border-color: #87CEEB;
+        }
+        
+        .tag.active {
+            background: rgba(135, 206, 235, 0.3);
+            border-color: #87CEEB;
+        }
+        
+        .tag-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #87CEEB;
+            color: #000;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            min-width: 0;
+        }
+        
+        /* Search and Filter */
+        .search-section {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border: 1px solid #333;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #555;
+            color: #c0c0c0;
+            padding: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #87CEEB;
+            box-shadow: 0 0 10px rgba(135, 206, 235, 0.2);
+        }
+        
+        .filter-select {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #555;
+            color: #c0c0c0;
+            padding: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: #87CEEB;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .view-btn {
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #555;
+            color: #c0c0c0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .view-btn.active {
+            background: rgba(135, 206, 235, 0.3);
+            border-color: #87CEEB;
+        }
+        
+        /* Prompt List */
+        .prompt-list {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            overflow-y: auto;
+            max-height: 60vh;
+            position: relative;
+        }
+        
+        .prompt-item {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .prompt-item:hover {
+            background: rgba(135, 206, 235, 0.1);
+        }
+        
+        .prompt-item.selected {
+            background: rgba(135, 206, 235, 0.2);
+            border-left: 4px solid #87CEEB;
+        }
+        
+        .prompt-item.favorited {
+            border-right: 4px solid #FFD700;
+        }
+        
+        .prompt-main {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .prompt-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .prompt-item:hover .prompt-actions {
+            opacity: 1;
+        }
+        
+        .prompt-title {
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .prompt-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 0.7rem;
+            color: #666;
+        }
+        
+        .prompt-preview {
+            color: #aaa;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .prompt-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .prompt-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+        
+        .prompt-tag {
+            background: rgba(135, 206, 235, 0.2);
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border: 1px solid #87CEEB;
+        }
+        
+        /* Grid View */
+        .prompt-list.grid-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            padding: 15px;
+        }
+        
+        .prompt-list.grid-view .prompt-item {
+            border: 1px solid #333;
+            border-bottom: 1px solid #333;
+            flex-direction: column;
+            height: 200px;
+        }
+        
+        /* Editor Area */
+        .editor-section {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            padding: 20px;
+            display: none;
+            position: relative;
+        }
+        
+        .editor-section.active {
+            display: block;
+        }
+        
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .editor-title-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .editor-title {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #555;
+            color: #c0c0c0;
+            padding: 8px;
+            flex: 1;
+            font-family: inherit;
+        }
+        
+        .editor-title:focus {
+            outline: none;
+            border-color: #87CEEB;
+        }
+        
+        .favorite-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #c0c0c0;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .favorite-btn.active {
+            color: #FFD700;
+            border-color: #FFD700;
+        }
+        
+        .editor-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .editor-textarea {
+            width: 100%;
+            height: 300px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #555;
+            color: #c0c0c0;
+            padding: 15px;
+            font-family: inherit;
+            resize: vertical;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .editor-textarea:focus {
+            outline: none;
+            border-color: #87CEEB;
+            box-shadow: 0 0 15px rgba(135, 206, 235, 0.2);
+        }
+        
+        .editor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .editor-tags {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .tags-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #555;
+            color: #c0c0c0;
+            padding: 8px;
+            width: 100%;
+            font-family: inherit;
+            margin-top: 5px;
+        }
+        
+        .tags-input:focus {
+            outline: none;
+            border-color: #87CEEB;
+        }
+        
+        .editor-stats {
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            gap: 15px;
+        }
+        
+        /* Footer */
+        .footer {
+            background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
+            border-top: 2px solid #333;
+            padding: 15px 20px;
+            text-align: center;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #87CEEB;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Keyboard shortcuts overlay */
+        .shortcuts-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .shortcuts-content {
+            background: #1a1a1a;
+            border: 2px solid #87CEEB;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .shortcuts-content h3 {
+            color: #87CEEB;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .shortcut-key {
+            background: rgba(135, 206, 235, 0.2);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-family: monospace;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 280px;
+                min-width: 280px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .toggle-sidebar {
+                display: block;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 120px; /* Account for titlebar + header */
+                left: 0;
+                height: calc(100vh - 180px);
+                z-index: 200;
+                width: 300px;
+                min-width: 300px;
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .content-area {
+                width: 100%;
+            }
+            
+            .search-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .editor-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .editor-title-group {
+                min-width: auto;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .header-controls {
+                flex-wrap: wrap;
+            }
+            
+            .prompt-list.grid-view {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, #0a0a0a, #1a1a1a);
+            border: 1px solid #333;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #555, #333);
+            border: 1px solid #87CEEB;
+            border-radius: 0;
+            box-shadow: inset 0 0 2px rgba(135, 206, 235, 0.3);
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #777, #555);
+            border-color: #87CEEB;
+            box-shadow: inset 0 0 4px rgba(135, 206, 235, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb:active {
+            background: linear-gradient(180deg, #87CEEB, #5a8eb8);
+            border-color: #87CEEB;
+        }
+        
+        ::-webkit-scrollbar-corner {
+            background: #1a1a1a;
+            border: 1px solid #333;
+        }
+        
+        /* Horizontal scrollbar styling */
+        ::-webkit-scrollbar:horizontal {
+            height: 12px;
+        }
+        
+        /* Custom scrollbar for specific elements */
+        .sidebar::-webkit-scrollbar,
+        .prompt-list::-webkit-scrollbar,
+        .recent-prompts::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb,
+        .prompt-list::-webkit-scrollbar-thumb,
+        .recent-prompts::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #444, #222);
+            border: 1px solid #87CEEB;
+        }
+        
+        /* Animation classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in-right {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Copy notification */
+        .copy-notification {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: #87CEEB;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 4px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .copy-notification.show {
+            transform: translateX(0);
+        }
+        
+        /* Loading indicator */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Titlebar -->
+    <div class="custom-titlebar" id="customTitlebar">
+        <div class="titlebar-title">INVOCATUR: PROMPTSCROLL</div>
+        <div class="titlebar-controls">
+            <button class="titlebar-button minimize" onclick="minimizeWindow()" title="Minimize">
+                <span>−</span>
+            </button>
+            <button class="titlebar-button maximize" onclick="maximizeWindow()" title="Maximize">
+                <span>□</span>
+            </button>
+            <button class="titlebar-button close" onclick="closeWindow()" title="Close">
+                <span>×</span>
+            </button>
+        </div>
+    </div>
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button class="btn toggle-sidebar" onclick="toggleSidebar()">☰</button>
+            <h1>DRIFT.LEXICON //v3.0 SCRIVENER</h1>
+        </div>
+        <div class="header-controls">
+            <button class="btn small" onclick="showShortcuts()" title="Keyboard Shortcuts">?</button>
+            <button class="btn" onclick="exportDataElectron()">EXPORT</button>
+            <button class="btn" onclick="importDataElectron()">IMPORT</button>
+            <button class="btn" onclick="bulkActions()">BULK</button>
+            <button class="btn primary" onclick="createNewPrompt()">NEW PROMPT</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="quick-actions">
+                    <button class="btn small" onclick="createNewPrompt()" title="New Prompt">+</button>
+                    <button class="btn small" onclick="showFavorites()" title="Favorites">★</button>
+                    <button class="btn small" onclick="showRecent()" title="Recent">↻</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section folder-tree">
+                <h3>DIRECTORIES</h3>
+                <div class="folder-item active" data-folder="all" onclick="selectFolder('all')">
+                    <div><span class="folder-icon">📁</span> ALL PROMPTS</div>
+                    <span class="folder-count" id="count-all">0</span>
+                </div>
+                <div class="folder-item" data-folder="creative" onclick="selectFolder('creative')">
+                    <div><span class="folder-icon">🎨</span> CREATIVE</div>
+                    <span class="folder-count" id="count-creative">0</span>
+                </div>
+                <div class="folder-item" data-folder="technical" onclick="selectFolder('technical')">
+                    <div><span class="folder-icon">⚙️</span> TECHNICAL</div>
+                    <span class="folder-count" id="count-technical">0</span>
+                </div>
+                <div class="folder-item" data-folder="business" onclick="selectFolder('business')">
+                    <div><span class="folder-icon">💼</span> BUSINESS</div>
+                    <span class="folder-count" id="count-business">0</span>
+                </div>
+                <div class="folder-item" data-folder="analysis" onclick="selectFolder('analysis')">
+                    <div><span class="folder-icon">📊</span> ANALYSIS</div>
+                    <span class="folder-count" id="count-analysis">0</span>
+                </div>
+                <div class="folder-item" data-folder="templates" onclick="selectFolder('templates')">
+                    <div><span class="folder-icon">📋</span> TEMPLATES</div>
+                    <span class="folder-count" id="count-templates">0</span>
+                </div>
+                <div class="folder-item" data-folder="archived" onclick="selectFolder('archived')">
+                    <div><span class="folder-icon">📦</span> ARCHIVED</div>
+                    <span class="folder-count" id="count-archived">0</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3>RECENT PROMPTS</h3>
+                <div class="recent-prompts" id="recentPrompts">
+                    <!-- Recent prompts will be populated dynamically -->
+                </div>
+            </div>
+
+            <div class="sidebar-section tag-cloud">
+                <h3>TAGS</h3>
+                <div id="tagCloud">
+                    <!-- Tags will be populated dynamically -->
+                </div>
+            </div>
+
+            <div class="sidebar-section sidebar-stats">
+                <h3>SYSTEM INFO</h3>
+                <div style="font-size: 0.8rem; color: #666; line-height: 1.6;">
+                    • Total Prompts: <span id="totalCount">0</span><br>
+                    • Favorites: <span id="favoriteCount">0</span><br>
+                    • Active Filters: <span id="filterCount">0</span><br>
+                    • Memory Usage: <span id="memoryUsage">0KB</span><br>
+                    • Last Sync: <span id="lastSync">--:--</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            <section class="search-section">
+                <input type="text" class="search-input" placeholder="SEARCH PROMPTS..." id="searchInput" onkeyup="filterPrompts()">
+                <select class="filter-select" id="sortSelect" onchange="sortPrompts()">
+                    <option value="date-desc">NEWEST FIRST</option>
+                    <option value="date-asc">OLDEST FIRST</option>
+                    <option value="title-asc">TITLE A-Z</option>
+                    <option value="title-desc">TITLE Z-A</option>
+                    <option value="usage-desc">MOST USED</option>
+                    <option value="rating-desc">HIGHEST RATED</option>
+                </select>
+                <select class="filter-select" id="filterSelect" onchange="applyFilter()">
+                    <option value="all">ALL PROMPTS</option>
+                    <option value="favorites">FAVORITES</option>
+                    <option value="recent">RECENT</option>
+                    <option value="unused">UNUSED</option>
+                </select>
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="setView('list')" title="List View">≡</button>
+                    <button class="view-btn" onclick="setView('grid')" title="Grid View">⊞</button>
+                </div>
+                <button class="btn" onclick="clearFilters()">CLEAR</button>
+            </section>
+
+            <section class="prompt-list" id="promptList">
+                <!-- Prompts will be populated dynamically -->
+            </section>
+
+            <section class="editor-section" id="editorSection">
+                <div class="editor-header">
+                    <div class="editor-title-group">
+                        <input type="text" class="editor-title" placeholder="PROMPT TITLE..." id="promptTitle">
+                        <button class="favorite-btn" id="favoriteBtn" onclick="toggleFavorite()" title="Toggle Favorite">★</button>
+                    </div>
+                    <div class="editor-controls">
+                        <select id="promptFolder" class="filter-select">
+                            <option value="creative">CREATIVE</option>
+                            <option value="technical">TECHNICAL</option>
+                            <option value="business">BUSINESS</option>
+                            <option value="analysis">ANALYSIS</option>
+                            <option value="templates">TEMPLATES</option>
+                            <option value="archived">ARCHIVED</option>
+                        </select>
+                        <button class="btn" onclick="duplicatePrompt()" title="Duplicate">COPY</button>
+                        <button class="btn primary" onclick="savePrompt()">SAVE</button>
+                        <button class="btn" onclick="cancelEdit()">CANCEL</button>
+                        <button class="btn danger" onclick="deletePrompt()" title="Delete">DELETE</button>
+                    </div>
+                </div>
+                <textarea class="editor-textarea" placeholder="ENTER PROMPT CONTENT..." id="promptContent"></textarea>
+                <div class="editor-footer">
+                    <div class="editor-tags">
+                        <label>TAGS (comma separated):</label>
+                        <input type="text" class="tags-input" placeholder="ai, creative, technical..." id="promptTags">
+                    </div>
+                    <div class="editor-stats">
+                        <span>Words: <span id="wordCount">0</span></span>
+                        <span>Characters: <span id="charCount">0</span></span>
+                        <span>Usage: <span id="usageCount">0</span></span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>ELECTRIEL SYSTEM ACTIVE</span>
+        </div>
+        <div>PROMPT ARCHIVE v21.33 // LORELEX INDUSTRIAL INTERLODE</div>
+        <div id="promptCounter">0 PROMPTS LOADED</div>
+    </footer>
+
+    <!-- Keyboard Shortcuts Overlay -->
+    <div class="shortcuts-overlay" id="shortcutsOverlay" onclick="hideShortcuts()">
+        <div class="shortcuts-content" onclick="event.stopPropagation()">
+            <h3>KEYBOARD SHORTCUTS</h3>
+            <div class="shortcut-item">
+                <span>New Prompt</span>
+                <span class="shortcut-key">Ctrl + N</span>
+            </div>
+            <div class="shortcut-item">
+                <span>Save Prompt</span>
+                <span class="shortcut-key">Ctrl + S</span>
+            </div>
+            <div class="shortcut-item">
+                <span>Search</span>
+                <span class="shortcut-key">Ctrl + F</span>
+            </div>
+            <div class="shortcut-item">
+                <span>Toggle Sidebar</span>
+                <span class="shortcut-key">Ctrl + B</span>
+            </div>
+            <div class="shortcut-item">
+                <span>Grid View</span>
+                <span class="shortcut-key">Ctrl + G</span>
+            </div>
+            <div class="shortcut-item">
+                <span>List View</span>
+                <span class="shortcut-key">Ctrl + L</span>
+            </div>
+            <div class="shortcut-item">
+                <span>Export Prompts</span>
+                <span class="shortcut-key">Ctrl + E</span>
+            </div>
+            <div class="shortcut-item">
+                <span>Import Prompts</span>
+                <span class="shortcut-key">Ctrl + I</span>
+            </div>
+            <div class="shortcut-item">
+                <span>Show Shortcuts</span>
+                <span class="shortcut-key">F1</span>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="hideShortcuts()">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy Notification -->
+    <div class="copy-notification" id="copyNotification">
+        COPIED TO CLIPBOARD
+    </div>
+
+    <script>
+        // Enhanced data structure for prompts with Electron support
+        let prompts = [
+            {
+                id: 1,
+                title: "Creative Story Generator",
+                content: "Create a compelling story about [TOPIC] with the following elements: [ELEMENTS]. Make it engaging and memorable with vivid descriptions and character development.",
+                folder: "creative",
+                tags: ["story", "creative", "narrative", "fiction"],
+                created: new Date("2024-01-15"),
+                modified: new Date("2024-01-15"),
+                lastUsed: new Date("2024-01-20"),
+                usage: 15,
+                favorite: true,
+                rating: 5
+            },
+            {
+                id: 2,
+                title: "Code Review Assistant",
+                content: "Review the following code for best practices, potential bugs, and optimization opportunities:\n\n[CODE]\n\nProvide specific feedback and suggestions for improvement.",
+                folder: "technical",
+                tags: ["code", "review", "programming", "optimization"],
+                created: new Date("2024-01-10"),
+                modified: new Date("2024-01-20"),
+                lastUsed: new Date("2024-01-18"),
+                usage: 8,
+                favorite: false,
+                rating: 4
+            },
+            {
+                id: 3,
+                title: "Business Strategy Analysis",
+                content: "Analyze the following business scenario and provide strategic recommendations:\n\n[SCENARIO]\n\nConsider market conditions, competitors, and available resources.",
+                folder: "business",
+                tags: ["strategy", "business", "analysis", "consulting"],
+                created: new Date("2024-01-05"),
+                modified: new Date("2024-01-18"),
+                lastUsed: new Date("2024-01-15"),
+                usage: 12,
+                favorite: true,
+                rating: 4
+            },
+            {
+                id: 4,
+                title: "API Documentation Template",
+                content: "Generate comprehensive API documentation for [API_NAME]:\n\n## Overview\n[DESCRIPTION]\n\n## Endpoints\n[ENDPOINTS]\n\n## Authentication\n[AUTH_DETAILS]\n\n## Examples\n[CODE_EXAMPLES]",
+                folder: "templates",
+                tags: ["api", "documentation", "template", "technical"],
+                created: new Date("2024-01-12"),
+                modified: new Date("2024-01-12"),
+                lastUsed: new Date("2024-01-16"),
+                usage: 6,
+                favorite: false,
+                rating: 3
+            }
+        ];
+
+        let currentFolder = 'all';
+        let activeTags = [];
+        let currentlyEditing = null;
+        let nextId = 5;
+        let currentView = 'list';
+        let currentFilter = 'all';
+        let isElectron = false;
+
+        // Window control functions
+        function minimizeWindow() {
+            if (isElectron && window.electronAPI) {
+                window.electronAPI.minimizeWindow();
+            }
+        }
+
+        function maximizeWindow() {
+            if (isElectron && window.electronAPI) {
+                window.electronAPI.maximizeWindow();
+                updateMaximizeButton();
+            }
+        }
+
+        function closeWindow() {
+            if (isElectron && window.electronAPI) {
+                window.electronAPI.closeWindow();
+            }
+        }
+
+        function updateMaximizeButton() {
+            const maximizeBtn = document.querySelector('.titlebar-button.maximize span');
+            if (maximizeBtn && isElectron && window.electronAPI) {
+                window.electronAPI.isMaximized().then(isMaximized => {
+                    maximizeBtn.textContent = isMaximized ? '⧉' : '□';
+                    maximizeBtn.parentElement.title = isMaximized ? 'Restore' : 'Maximize';
+                });
+            }
+        }
+
+        // Platform-specific titlebar handling
+        function setupTitlebar() {
+            const titlebar = document.getElementById('customTitlebar');
+            
+            if (isElectron && window.electronAPI) {
+                // Show custom titlebar on Windows and Linux
+                if (window.electronAPI.platform === 'win32' || window.electronAPI.platform === 'linux') {
+                    titlebar.style.display = 'flex';
+                    document.body.classList.add('custom-titlebar-active');
+                } else if (window.electronAPI.platform === 'darwin') {
+                    // Hide on macOS as we use native traffic lights
+                    titlebar.style.display = 'none';
+                    document.body.classList.add('native-titlebar');
+                }
+            } else {
+                // Hide titlebar in web browser
+                titlebar.style.display = 'none';
+            }
+        }
+        if (typeof window !== 'undefined' && window.electronAPI) {
+            isElectron = true;
+            console.log('🏭 Running in Electron environment');
+        }
+
+        // Electron-specific storage functions
+        async function saveToElectronStore() {
+            if (isElectron && window.electronAPI) {
+                try {
+                    await window.electronAPI.store.set('prompts', prompts);
+                    await window.electronAPI.store.set('settings', {
+                        currentFolder,
+                        activeTags,
+                        currentView,
+                        currentFilter
+                    });
+                } catch (error) {
+                    console.error('Failed to save to Electron store:', error);
+                }
+            }
+        }
+
+        async function loadFromElectronStore() {
+            if (isElectron && window.electronAPI) {
+                try {
+                    const savedPrompts = await window.electronAPI.store.get('prompts', []);
+                    const savedSettings = await window.electronAPI.store.get('settings', {});
+                    
+                    if (savedPrompts.length > 0) {
+                        prompts = savedPrompts.map(p => ({
+                            ...p,
+                            created: new Date(p.created),
+                            modified: new Date(p.modified),
+                            lastUsed: p.lastUsed ? new Date(p.lastUsed) : null
+                        }));
+                        nextId = Math.max(...prompts.map(p => p.id)) + 1;
+                    }
+                    
+                    if (savedSettings.currentFolder) currentFolder = savedSettings.currentFolder;
+                    if (savedSettings.activeTags) activeTags = savedSettings.activeTags;
+                    if (savedSettings.currentView) currentView = savedSettings.currentView;
+                    if (savedSettings.currentFilter) currentFilter = savedSettings.currentFilter;
+                    
+                } catch (error) {
+                    console.error('Failed to load from Electron store:', error);
+                }
+            }
+        }
+
+        // Enhanced export for Electron
+        async function exportDataElectron() {
+            const dataStr = JSON.stringify(prompts, null, 2);
+            
+            if (isElectron && window.electronAPI) {
+                try {
+                    const result = await window.electronAPI.exportData(dataStr);
+                    if (result.success) {
+                        showNotification(`EXPORTED ${prompts.length} PROMPTS TO ${result.path}`, 'success');
+                    } else if (result.cancelled) {
+                        showNotification('EXPORT CANCELLED', 'info');
+                    } else {
+                        showNotification('EXPORT FAILED: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    showNotification('EXPORT ERROR: ' + error.message, 'error');
+                }
+            } else {
+                // Fallback to browser download
+                exportData();
+            }
+        }
+
+        // Enhanced import for Electron (called from menu)
+        function importDataElectron(data = null) {
+            if (data) {
+                try {
+                    const importedPrompts = JSON.parse(data);
+                    if (confirm('IMPORT ' + importedPrompts.length + ' PROMPTS? THIS WILL MERGE WITH EXISTING DATA.')) {
+                        const maxId = Math.max(...prompts.map(p => p.id), 0);
+                        importedPrompts.forEach((prompt, index) => {
+                            prompt.id = maxId + index + 1;
+                            prompt.created = new Date(prompt.created);
+                            prompt.modified = new Date(prompt.modified);
+                            if (prompt.lastUsed) prompt.lastUsed = new Date(prompt.lastUsed);
+                            if (!prompt.hasOwnProperty('favorite')) prompt.favorite = false;
+                            if (!prompt.hasOwnProperty('rating')) prompt.rating = 0;
+                        });
+                        
+                        prompts.push(...importedPrompts);
+                        nextId = Math.max(...prompts.map(p => p.id)) + 1;
+                        
+                        renderPrompts();
+                        updateTagCloud();
+                        updateRecentPrompts();
+                        updateFolderCounts();
+                        updateStats();
+                        updateLastSync();
+                        saveToElectronStore();
+                        showNotification('IMPORTED ' + importedPrompts.length + ' PROMPTS', 'success');
+                    }
+                } catch (error) {
+                    showNotification('INVALID FILE FORMAT', 'error');
+                }
+            }
+        }
+
+        // All the existing functions remain the same, with Electron store integration
+
+        // Initialize the application
+        async function init() {
+            if (isElectron) {
+                await loadFromElectronStore();
+                setupTitlebar();
+                updateMaximizeButton();
+            }
+            
+            renderPrompts();
+            updateTagCloud();
+            updateRecentPrompts();
+            updateFolderCounts();
+            updateStats();
+            updateLastSync();
+            setupKeyboardShortcuts();
+            
+            // Apply saved settings
+            if (currentFolder !== 'all') {
+                selectFolder(currentFolder);
+            }
+            if (currentView !== 'list') {
+                setView(currentView);
+            }
+            if (currentFilter !== 'all') {
+                document.getElementById('filterSelect').value = currentFilter;
+                applyFilter();
+            }
+        }
+
+        // Render prompt list
+        function renderPrompts() {
+            const promptList = document.getElementById('promptList');
+            const filteredPrompts = getFilteredPrompts();
+            
+            promptList.className = `prompt-list ${currentView}-view`;
+            promptList.innerHTML = '';
+            
+            if (filteredPrompts.length === 0) {
+                promptList.innerHTML = '<div class="loading">NO PROMPTS FOUND // ADJUST FILTERS OR CREATE NEW PROMPT</div>';
+                return;
+            }
+
+            filteredPrompts.forEach(prompt => {
+                const promptElement = document.createElement('div');
+                promptElement.className = `prompt-item fade-in ${prompt.favorite ? 'favorited' : ''}`;
+                promptElement.onclick = (e) => {
+                    if (!e.target.closest('.prompt-actions')) {
+                        selectPrompt(prompt.id);
+                    }
+                };
+                
+                promptElement.innerHTML = `
+                    <div class="prompt-main">
+                        <div class="prompt-title">
+                            <span>${prompt.title}</span>
+                            <div class="prompt-stats">
+                                <span>★${prompt.rating || 0}</span>
+                                <span>USAGE: ${prompt.usage}</span>
+                                ${prompt.favorite ? '<span style="color: #FFD700;">★</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="prompt-preview">${prompt.content.substring(0, 120)}...</div>
+                        <div class="prompt-meta">
+                            <span>FOLDER: ${prompt.folder.toUpperCase()}</span>
+                            <span>MODIFIED: ${formatDate(prompt.modified)}</span>
+                            <span>LAST USED: ${prompt.lastUsed ? formatDate(prompt.lastUsed) : 'NEVER'}</span>
+                        </div>
+                        <div class="prompt-tags">
+                            ${prompt.tags.map(tag => `<span class="prompt-tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="prompt-actions">
+                        <button class="btn small" onclick="copyToClipboard(${prompt.id})" title="Copy">📋</button>
+                        <button class="btn small" onclick="duplicatePrompt(${prompt.id})" title="Duplicate">📄</button>
+                        <button class="btn small ${prompt.favorite ? 'primary' : ''}" onclick="togglePromptFavorite(${prompt.id})" title="Favorite">★</button>
+                    </div>
+                `;
+                
+                promptList.appendChild(promptElement);
+            });
+        }
+
+        // Get filtered prompts based on current filters
+        function getFilteredPrompts() {
+            let filtered = prompts.slice();
+
+            // Filter by folder
+            if (currentFolder !== 'all') {
+                filtered = filtered.filter(p => p.folder === currentFolder);
+            }
+
+            // Filter by special filters
+            switch (currentFilter) {
+                case 'favorites':
+                    filtered = filtered.filter(p => p.favorite);
+                    break;
+                case 'recent':
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    filtered = filtered.filter(p => p.lastUsed && p.lastUsed > weekAgo);
+                    break;
+                case 'unused':
+                    filtered = filtered.filter(p => p.usage === 0);
+                    break;
+            }
+
+            // Filter by active tags
+            if (activeTags.length > 0) {
+                filtered = filtered.filter(p => 
+                    activeTags.every(tag => p.tags.includes(tag))
+                );
+            }
+
+            // Filter by search term
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(p => 
+                    p.title.toLowerCase().includes(searchTerm) ||
+                    p.content.toLowerCase().includes(searchTerm) ||
+                    p.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            // Sort prompts
+            const sortBy = document.getElementById('sortSelect').value;
+            filtered.sort((a, b) => {
+                switch (sortBy) {
+                    case 'date-desc':
+                        return new Date(b.modified) - new Date(a.modified);
+                    case 'date-asc':
+                        return new Date(a.modified) - new Date(b.modified);
+                    case 'title-asc':
+                        return a.title.localeCompare(b.title);
+                    case 'title-desc':
+                        return b.title.localeCompare(a.title);
+                    case 'usage-desc':
+                        return b.usage - a.usage;
+                    case 'rating-desc':
+                        return (b.rating || 0) - (a.rating || 0);
+                    default:
+                        return 0;
+                }
+            });
+
+            return filtered;
+        }
+
+        // Select folder
+        function selectFolder(folder) {
+            currentFolder = folder;
+            document.querySelectorAll('.folder-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-folder="${folder}"]`).classList.add('active');
+            renderPrompts();
+            updateStats();
+            saveToElectronStore();
+        }
+
+        // Toggle tag filter
+        function toggleTag(tag) {
+            const index = activeTags.indexOf(tag);
+            if (index > -1) {
+                activeTags.splice(index, 1);
+            } else {
+                activeTags.push(tag);
+            }
+            updateTagCloud();
+            renderPrompts();
+            updateStats();
+            saveToElectronStore();
+        }
+
+        // Update tag cloud with counts
+        function updateTagCloud() {
+            const tagCloud = document.getElementById('tagCloud');
+            const tagCounts = {};
+            
+            prompts.forEach(prompt => {
+                prompt.tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            });
+            
+            const sortedTags = Object.entries(tagCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20); // Show top 20 tags
+            
+            tagCloud.innerHTML = sortedTags.map(([tag, count]) => 
+                `<span class="tag ${activeTags.includes(tag) ? 'active' : ''}" onclick="toggleTag('${tag}')">
+                    ${tag}
+                    <span class="tag-count">${count}</span>
+                </span>`
+            ).join('');
+        }
+
+        // Update recent prompts
+        function updateRecentPrompts() {
+            const recentPrompts = document.getElementById('recentPrompts');
+            const recent = prompts
+                .filter(p => p.lastUsed)
+                .sort((a, b) => new Date(b.lastUsed) - new Date(a.lastUsed))
+                .slice(0, 5);
+            
+            recentPrompts.innerHTML = recent.map(prompt => 
+                `<div class="recent-item" onclick="selectPrompt(${prompt.id})">
+                    <div style="font-weight: bold; margin-bottom: 2px;">${prompt.title}</div>
+                    <div style="font-size: 0.7rem; color: #666;">${formatDate(prompt.lastUsed)}</div>
+                </div>`
+            ).join('');
+        }
+
+        // Update folder counts
+        function updateFolderCounts() {
+            const counts = {};
+            prompts.forEach(prompt => {
+                counts[prompt.folder] = (counts[prompt.folder] || 0) + 1;
+            });
+            
+            counts.all = prompts.length;
+            
+            Object.keys(counts).forEach(folder => {
+                const element = document.getElementById(`count-${folder}`);
+                if (element) {
+                    element.textContent = counts[folder] || 0;
+                }
+            });
+        }
+
+        // Select prompt for editing
+        function selectPrompt(id) {
+            const prompt = prompts.find(p => p.id === id);
+            if (!prompt) return;
+
+            // Update usage count and last used
+            prompt.usage++;
+            prompt.lastUsed = new Date();
+            
+            // Highlight selected prompt
+            document.querySelectorAll('.prompt-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.prompt-item').classList.add('selected');
+
+            // Show editor
+            currentlyEditing = id;
+            document.getElementById('promptTitle').value = prompt.title;
+            document.getElementById('promptContent').value = prompt.content;
+            document.getElementById('promptFolder').value = prompt.folder;
+            document.getElementById('promptTags').value = prompt.tags.join(', ');
+            document.getElementById('favoriteBtn').classList.toggle('active', prompt.favorite);
+            document.getElementById('editorSection').classList.add('active');
+            
+            updateWordCount();
+            updateRecentPrompts();
+            updateStats();
+            saveToElectronStore();
+        }
+
+        // Create new prompt
+        function createNewPrompt() {
+            currentlyEditing = null;
+            document.getElementById('promptTitle').value = '';
+            document.getElementById('promptContent').value = '';
+            document.getElementById('promptFolder').value = 'creative';
+            document.getElementById('promptTags').value = '';
+            document.getElementById('favoriteBtn').classList.remove('active');
+            document.getElementById('editorSection').classList.add('active');
+            updateWordCount();
+            
+            // Focus on title input
+            setTimeout(() => {
+                document.getElementById('promptTitle').focus();
+            }, 100);
+        }
+
+        // Save prompt
+        function savePrompt() {
+            const title = document.getElementById('promptTitle').value.trim();
+            const content = document.getElementById('promptContent').value.trim();
+            const folder = document.getElementById('promptFolder').value;
+            const tags = document.getElementById('promptTags').value
+                .split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag.length > 0);
+            const favorite = document.getElementById('favoriteBtn').classList.contains('active');
+
+            if (!title || !content) {
+                showNotification('TITLE AND CONTENT ARE REQUIRED', 'error');
+                return;
+            }
+
+            if (currentlyEditing) {
+                // Update existing prompt
+                const prompt = prompts.find(p => p.id === currentlyEditing);
+                prompt.title = title;
+                prompt.content = content;
+                prompt.folder = folder;
+                prompt.tags = tags;
+                prompt.favorite = favorite;
+                prompt.modified = new Date();
+                showNotification('PROMPT UPDATED', 'success');
+            } else {
+                // Create new prompt
+                const newPrompt = {
+                    id: nextId++,
+                    title,
+                    content,
+                    folder,
+                    tags,
+                    favorite,
+                    created: new Date(),
+                    modified: new Date(),
+                    lastUsed: null,
+                    usage: 0,
+                    rating: 0
+                };
+                prompts.push(newPrompt);
+                showNotification('PROMPT CREATED', 'success');
+            }
+
+            // Hide editor and refresh views
+            document.getElementById('editorSection').classList.remove('active');
+            renderPrompts();
+            updateTagCloud();
+            updateRecentPrompts();
+            updateFolderCounts();
+            updateStats();
+            updateLastSync();
+            saveToElectronStore();
+        }
+
+        // Toggle favorite in editor
+        function toggleFavorite() {
+            document.getElementById('favoriteBtn').classList.toggle('active');
+        }
+
+        // Toggle prompt favorite from list
+        function togglePromptFavorite(id) {
+            const prompt = prompts.find(p => p.id === id);
+            if (prompt) {
+                prompt.favorite = !prompt.favorite;
+                renderPrompts();
+                updateStats();
+                saveToElectronStore();
+            }
+        }
+
+        // Duplicate prompt
+        function duplicatePrompt(id = null) {
+            let sourcePrompt;
+            
+            if (id) {
+                sourcePrompt = prompts.find(p => p.id === id);
+            } else if (currentlyEditing) {
+                sourcePrompt = prompts.find(p => p.id === currentlyEditing);
+            }
+            
+            if (!sourcePrompt) return;
+
+            const newPrompt = {
+                id: nextId++,
+                title: sourcePrompt.title + ' (Copy)',
+                content: sourcePrompt.content,
+                folder: sourcePrompt.folder,
+                tags: [...sourcePrompt.tags],
+                favorite: false,
+                created: new Date(),
+                modified: new Date(),
+                lastUsed: null,
+                usage: 0,
+                rating: 0
+            };
+            
+            prompts.push(newPrompt);
+            renderPrompts();
+            updateTagCloud();
+            updateFolderCounts();
+            updateStats();
+            showNotification('PROMPT DUPLICATED', 'success');
+            saveToElectronStore();
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(id) {
+            const prompt = prompts.find(p => p.id === id);
+            if (!prompt) return;
+            
+            navigator.clipboard.writeText(prompt.content).then(() => {
+                showNotification('COPIED TO CLIPBOARD', 'success');
+                prompt.usage++;
+                prompt.lastUsed = new Date();
+                updateRecentPrompts();
+                updateStats();
+                saveToElectronStore();
+            }).catch(() => {
+                showNotification('COPY FAILED', 'error');
+            });
+        }
+
+        // Cancel editing
+        function cancelEdit() {
+            document.getElementById('editorSection').classList.remove('active');
+            currentlyEditing = null;
+        }
+
+        // Delete prompt
+        function deletePrompt() {
+            if (!currentlyEditing) return;
+            
+            if (confirm('DELETE THIS PROMPT? THIS ACTION CANNOT BE UNDONE.')) {
+                prompts = prompts.filter(p => p.id !== currentlyEditing);
+                document.getElementById('editorSection').classList.remove('active');
+                currentlyEditing = null;
+                renderPrompts();
+                updateTagCloud();
+                updateRecentPrompts();
+                updateFolderCounts();
+                updateStats();
+                showNotification('PROMPT DELETED', 'success');
+                saveToElectronStore();
+            }
+        }
+
+        // Filter prompts by search
+        function filterPrompts() {
+            renderPrompts();
+            updateStats();
+        }
+
+        // Sort prompts
+        function sortPrompts() {
+            renderPrompts();
+        }
+
+        // Apply filter
+        function applyFilter() {
+            currentFilter = document.getElementById('filterSelect').value;
+            renderPrompts();
+            updateStats();
+            saveToElectronStore();
+        }
+
+        // Set view mode
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderPrompts();
+            saveToElectronStore();
+        }
+
+        // Show specific views
+        function showFavorites() {
+            document.getElementById('filterSelect').value = 'favorites';
+            applyFilter();
+        }
+
+        function showRecent() {
+            document.getElementById('filterSelect').value = 'recent';
+            applyFilter();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterSelect').value = 'all';
+            currentFilter = 'all';
+            activeTags = [];
+            updateTagCloud();
+            renderPrompts();
+            updateStats();
+            saveToElectronStore();
+        }
+
+        // Bulk actions
+        function bulkActions() {
+            const actions = [
+                'Export Selected',
+                'Delete Selected',
+                'Move to Folder',
+                'Add Tags',
+                'Mark as Favorites'
+            ];
+            
+            const action = prompt('BULK ACTIONS:\n' + actions.map((a, i) => `${i + 1}. ${a}`).join('\n') + '\n\nSelect action (1-5):');
+            
+            if (action && action >= 1 && action <= 5) {
+                showNotification('BULK ACTION: ' + actions[action - 1], 'info');
+                // Implement bulk actions here
+            }
+        }
+
+        // Legacy export function (fallback)
+        function exportData() {
+            const dataStr = JSON.stringify(prompts, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'prompt_archive_' + new Date().toISOString().split('T')[0] + '.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showNotification('EXPORTED ' + prompts.length + ' PROMPTS', 'success');
+        }
+
+        // Legacy import function (fallback)
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = e => {
+                    importDataElectron(e.target.result);
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        // Toggle sidebar (mobile)
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        // Show/hide shortcuts overlay
+        function showShortcuts() {
+            document.getElementById('shortcutsOverlay').style.display = 'flex';
+        }
+
+        function hideShortcuts() {
+            document.getElementById('shortcutsOverlay').style.display = 'none';
+        }
+
+        // Update word count
+        function updateWordCount() {
+            const content = document.getElementById('promptContent').value;
+            const words = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+            const chars = content.length;
+            
+            document.getElementById('wordCount').textContent = words;
+            document.getElementById('charCount').textContent = chars;
+            
+            if (currentlyEditing) {
+                const prompt = prompts.find(p => p.id === currentlyEditing);
+                document.getElementById('usageCount').textContent = prompt ? prompt.usage : 0;
+            } else {
+                document.getElementById('usageCount').textContent = 0;
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('copyNotification');
+            notification.textContent = message;
+            notification.className = `copy-notification show ${type}`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+
+        // Update statistics
+        function updateStats() {
+            const filteredCount = getFilteredPrompts().length;
+            const favoriteCount = prompts.filter(p => p.favorite).length;
+            const activeFilters = (currentFolder !== 'all' ? 1 : 0) + 
+                               activeTags.length + 
+                               (document.getElementById('searchInput').value ? 1 : 0) +
+                               (currentFilter !== 'all' ? 1 : 0);
+            
+            document.getElementById('totalCount').textContent = prompts.length;
+            document.getElementById('favoriteCount').textContent = favoriteCount;
+            document.getElementById('filterCount').textContent = activeFilters;
+            document.getElementById('memoryUsage').textContent = Math.round(JSON.stringify(prompts).length / 1024) + 'KB';
+            document.getElementById('promptCounter').textContent = filteredCount + ' PROMPTS LOADED';
+        }
+
+        // Update last sync time
+        function updateLastSync() {
+            const now = new Date();
+            document.getElementById('lastSync').textContent = 
+                now.getHours().toString().padStart(2, '0') + ':' + 
+                now.getMinutes().toString().padStart(2, '0');
+        }
+
+        // Format date
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Setup keyboard shortcuts
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    switch (e.key) {
+                        case 'n':
+                            e.preventDefault();
+                            createNewPrompt();
+                            break;
+                        case 's':
+                            e.preventDefault();
+                            if (document.getElementById('editorSection').classList.contains('active')) {
+                                savePrompt();
+                            }
+                            break;
+                        case 'f':
+                            e.preventDefault();
+                            document.getElementById('searchInput').focus();
+                            break;
+                        case 'b':
+                            e.preventDefault();
+                            toggleSidebar();
+                            break;
+                        case 'g':
+                            e.preventDefault();
+                            setView('grid');
+                            break;
+                        case 'l':
+                            e.preventDefault();
+                            setView('list');
+                            break;
+                        case 'e':
+                            e.preventDefault();
+                            exportDataElectron();
+                            break;
+                        case 'i':
+                            e.preventDefault();
+                            // Import is handled by menu in Electron
+                            break;
+                    }
+                } else if (e.key === 'F1') {
+                    e.preventDefault();
+                    showShortcuts();
+                } else if (e.key === 'Escape') {
+                    hideShortcuts();
+                    if (document.getElementById('editorSection').classList.contains('active')) {
+                        cancelEdit();
+                    }
+                }
+            });
+
+            // Update word count on input
+            document.getElementById('promptContent').addEventListener('input', updateWordCount);
+        }
+
+        // Auto-save interval for Electron
+        if (isElectron) {
+            setInterval(saveToElectronStore, 30000); // Save every 30 seconds
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+
+        // Make functions available globally for Electron menu integration
+        window.createNewPrompt = createNewPrompt;
+        window.savePrompt = savePrompt;
+        window.toggleSidebar = toggleSidebar;
+        window.setView = setView;
+        window.showShortcuts = showShortcuts;
+        window.exportDataElectron = exportDataElectron;
+        window.importDataElectron = importDataElectron;
+        window.minimizeWindow = minimizeWindow;
+        window.maximizeWindow = maximizeWindow;
+        window.closeWindow = closeWindow;
+    </script>
+</body>
+</html>
